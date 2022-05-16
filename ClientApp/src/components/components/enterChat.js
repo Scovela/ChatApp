@@ -11,7 +11,7 @@ export async function enterChat(chatClient, threadId, id, name) {
 
 
     // Join a chatroom/thread or create a new one
-    if (threadId.toLowerCase().trim() == 'new' ) {
+    if (threadId.toLowerCase().trim() == 'new' ) {   // Create new thread
         const createChatThreadRequest = {
             topic: "Test topic"
         };
@@ -28,13 +28,14 @@ export async function enterChat(chatClient, threadId, id, name) {
             createChatThreadRequest,
             createChatThreadOptions
         );
+        threadId = createChatThreadResult.chatThread.id;
+        prompt('Your brand new thread ID, please note it down:', `${threadId}`);
+
         console.log('After createChatThread:');
         console.log(createChatThreadResult);
-
-        threadId = createChatThreadResult.chatThread.id;
         console.log('Created thread with id ' + threadId);
     }
-    else {
+    else {   // Join existing thread
         console.log('Joining thread with id ' + threadId);
     }
 

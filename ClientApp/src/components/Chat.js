@@ -43,6 +43,8 @@ export function Chat() {
             }
 
         }
+        else
+            setThreads([]);
     }, [chatClient])
 
 
@@ -70,7 +72,7 @@ export function Chat() {
             const identityResponse = await identityClient.createUser();
             idT = identityResponse.communicationUserId;
             console.log(`\nCreated an identity with user ID: ${idT}`);
-            alert(`Your brand new user ID:\n${idT}\n\nPlease note it down.`)
+            prompt('Your brand new user ID, please note it down:', `${idT}}`);
 
             // Get token for user
             let tokenResponse = await identityClient.getToken(identityResponse, ["chat"]);
@@ -78,7 +80,7 @@ export function Chat() {
             var expiresOn = tokenResponse.expiresOn;
             console.log(`\nIssued an access token with 'chat' scope that expires at ${expiresOn}:`);
             console.log(token);
-            alert(`Your brand new user access token:\n${token}\nPlease note it down.`)
+            prompt('Your brand new user access token, please note it down:', `${token}`);
         }
         else { // existing user
             token = prompt('Token: ');
@@ -90,10 +92,26 @@ export function Chat() {
         // Login and get chat client
         const clientPromise = login(chatClient, token);
         clientPromise.then((client) => {
-            setChatClient(client);
+            if (client)
+                setChatClient(client);
+            else
+                alert('Failed to login.');
         });
 
         console.log(`Account chosen with name ${name}`);
+    }
+
+    const logoutAction = () => {
+        chatClient.stopRealtimeNotifications();
+        setChatClient(null);
+        document.getElementById('participants').innerHTML = 'Participants:';
+        exitChatAction();
+    }
+
+    const exitChatAction = () => {
+        setChatThreadClient(null);
+        document.getElementById('participants').innerHTML = 'Participants:<br/>';
+        document.getElementById('messageHistory').innerHTML = '';
     }
 
     const enterChatAction = (threadId) => {
@@ -128,15 +146,27 @@ export function Chat() {
         addParticipant(chatThreadClient);
     }
 
-    const refreshTokenAction = () => {
-        refreshToken(id);
+    const checkRefreshTokenAction = () => {
+        if (chatClient.tokenCredential.tokenCredential.token.expiresOnTimestamp < Date.now()) {
+        
+            let token = refreshToken(id);
+
+            const clientPromise = login(chatClient, token);
+            clientPromise.then((client) => {
+                if (client)
+                    setChatClient(client);
+                else
+                    alert('Failed to login.');
+            });
+        }
+        console.log('Logged in also!');
     }
 
 
     return (
         <>
-            {chatClient && <p> chatClient exists </p>}
-            {chatThreadClient && <p> chatThreadClient exists {chatThreadClient.threadId} </p>}
+            {chatClient && <p> Using account with ID:<br />{id}<br />Current token expires on {(new Date(chatClient.tokenCredential.tokenCredential.token.expiresOnTimestamp)).toLocaleString()}. </p>}
+            {chatThreadClient && <p> Using chatroom ID:<br/>{chatThreadClient.threadId} </p>}
             <div id='messageHistory' className="rowtop">
                 Messages
             </div>
@@ -156,19 +186,27 @@ export function Chat() {
                             <button className="button" onClick={sendAction}>
                                 Send
                             </button>
-                            <button className="button" onClick={loginAction}>
-                                Login
-                            </button>
-                            <button className="button" onClick={() => enterChatAction('')}>
-                                Enter chat
+                            <button className="button" onClick={addPartAction}>
+                                Add participant
                             </button>
                             <button className="button" onClick={remPartAction}>
                                 Remove participant
                             </button>
-                            <button className="button" onClick={addPartAction}>
-                                Add participant
+                        </div>
+                        <div className="vertical-center">
+                            <button className="button" onClick={loginAction}>
+                                Login
                             </button>
-                            <button className="button" onClick={refreshTokenAction}>
+                            <button className="button" onClick={logoutAction}>
+                                Logout
+                            </button>
+                            <button className="button" onClick={() => enterChatAction('')}>
+                                Enter chat
+                            </button>
+                            <button className="button" onClick={exitChatAction}>
+                                Exit chat
+                            </button>
+                            <button className="button" onClick={checkRefreshTokenAction}>
                                 Refresh access token
                             </button>
                         </div>
@@ -176,11 +214,13 @@ export function Chat() {
                 </div>
             </div>
             <div id='participants'>
-                Participants
+                <p>{chatClient && 'Participants:'}<br/></p>
+                Participants:<br/>
             </div>
             <div id='chatrooms'>
+                <p>{threads.length>0 && 'Chatrooms:'}<br/></p>
                 <ul>
-                    {threads && threads.map((thread) => {
+                    {threads.map((thread) => {
                         return (
                             <li key={thread.id}><button onClick={() => enterChatAction(thread.id)} >{thread.id}</button></li>
                         );

@@ -28,6 +28,7 @@ export async function login(chatClient, token) {
         }
         else
             alert(e.message);
+        return null;
     }
 
     return chatClient;
@@ -93,6 +94,11 @@ async function getChatClient(token) {
 
     console.log('Getting chat client...');
 
+    //// Connect to identity service
+    //const tokenCredential = new AzureCommunicationTokenCredential({
+    //    tokenRefresher: async () => fetchTokenFromMyServerForUser("<user_id>"),
+    //    refreshProactively: true
+    //});
     let tokenCredential = new AzureCommunicationTokenCredential(token);
     const chatClient = new ChatClient(endpointUrl, tokenCredential);
 
