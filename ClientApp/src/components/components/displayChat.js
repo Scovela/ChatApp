@@ -63,10 +63,10 @@ export async function showParticipants(chatThreadClient) {
     var divParticipants = document.getElementById('participants');
     divParticipants.innerHTML = '<br/>Participants:<br/>';
     for await (const participant of participants) {
-        console.log(participant);
-        divParticipants.innerHTML += participant.displayName + '<br/>';
+        //console.log(participant);
+        if (participant.displayName !== undefined)
+            divParticipants.innerHTML += participant.displayName + '<br/>';
     }
-    divParticipants.innerHTML += '<br/>';
 
     console.log('Listed!!!');
 }

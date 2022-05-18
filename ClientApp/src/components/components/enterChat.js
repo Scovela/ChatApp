@@ -12,8 +12,9 @@ export async function enterChat(chatClient, threadId, id, name) {
 
     // Join a chatroom/thread or create a new one
     if (threadId.toLowerCase().trim() == 'new' ) {   // Create new thread
+        const chatName = prompt('Please name your chatroom:');
         const createChatThreadRequest = {
-            topic: "Test topic"
+            topic: chatName
         };
         const createChatThreadOptions = {
             participants: [

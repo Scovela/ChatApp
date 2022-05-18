@@ -1,6 +1,7 @@
 //import jwt from 'jsonwebtoken';
 import { ChatClient } from '@azure/communication-chat';
 import { AzureCommunicationTokenCredential } from '@azure/communication-common';
+
 const { CommunicationIdentityClient } = require('@azure/communication-identity');
 
 
@@ -10,16 +11,12 @@ const connectionString = 'endpoint=https://acs-chatapp.communication.azure.com/;
 
 export async function login(chatClient, token) {
 
-    // Unsubscribe old chat client
-    if (chatClient) {
-        unsubscribeFromNotifications(chatClient);
-    }
-
+    let chatClientNew;
     try {
         // Create a chat client for user with token
-        chatClient = await getChatClient(token);
+        chatClientNew = await getChatClient(token);
         // Subscribe new chat client
-        subscribeToNotifications(chatClient);
+        subscribeToNotifications(chatClientNew);
     }
     catch (e) {
         console.log(e);
@@ -31,7 +28,12 @@ export async function login(chatClient, token) {
         return null;
     }
 
-    return chatClient;
+    // Unsubscribe old chat client
+    if (chatClient) {
+        await unsubscribeFromNotifications(chatClient);
+    }
+
+    return chatClientNew;
 }
 
 
@@ -39,6 +41,7 @@ export async function login(chatClient, token) {
 
 async function unsubscribeFromNotifications(chatClient) {
     if (chatClient) {
+        console.log('Unsubscribing!');
         await chatClient.stopRealtimeNotifications();
         chatClient.off("chatMessageReceived", (e) => { });
         chatClient.off("participantsAdded", (e) => { });
@@ -77,9 +80,9 @@ async function subscribeToNotifications(chatClient) {
         console.log(e);
         let history = document.getElementById('messageHistory');
         history.innerHTML = history.innerHTML + `<i>${e.participantsRemoved[0].displayName} has left the chat. ....................${e.addedOn.toLocaleTimeString()}</i><br/>`;
-        //showParticipants(???);
-        // What to do?
-        // Now handled one lvl up
+        var divParticipants = document.getElementById('participants');
+        const i = divParticipants.innerHTML.lastIndexOf('<br/>');
+        divParticipants.innerHTML = divParticipants.innerHTML.substring(0, i+5);
     });
 
     console.log('Subscribed!');
@@ -117,7 +120,11 @@ export async function refreshToken(id) {
 
     // Get token for user
     const identityClient = new CommunicationIdentityClient(connectionString);
-    const identityResponse = await identityClient.createUser(id);
+    //const identityResponse = await identityClient.createUser(id);
+    //const refreshedTokenResponse = await identityClient.getToken(identityResponse, ["chat"]);
+    const identityResponse = {
+        communicationUserId: id
+    };
     const refreshedTokenResponse = await identityClient.getToken(identityResponse, ["chat"]);
 
 
